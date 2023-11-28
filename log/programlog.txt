@@ -1,0 +1,10 @@
+Batch CIA 3DS Decryptor Redux
+[i] = Information
+[!] = Error
+[#] = Debug
+[^] = Warning
+
+Batch CIA 3DS Decryptor Redux - build 2023-11-28
+28.11.2023 - 22:52:26 = [i] Script started
+28.11.2023 - 22:52:26 = [i] No files where decrypted
+28.11.2023 - 22:52:26 = [i] Script execution ended
