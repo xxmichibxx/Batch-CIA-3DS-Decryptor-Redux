@@ -25,12 +25,8 @@ Original thread: https://gbatemp.net/threads/batch-cia-3ds-decryptor-a-simple-ba
 * Run "Batch CIA 3DS Decryptor Redux.bat"
 
 ## Supported operating systems (only x64)
-* Windows XP
-* Windows Vista
-* Windows 7
-* Windows 8.1
-* Windows 10
-* Windows 11
+* Windows XP or higher
+* Windows Server 2003 R2 or higher
 
 ## Credits
 * `Batch CIA 3DS Decryptor` - [matiffeder](https://github.com/matiffeder/3DS-stuff)
