@@ -24,6 +24,14 @@ Original thread: https://gbatemp.net/threads/batch-cia-3ds-decryptor-a-simple-ba
 * Copy CIA or 3DS files into the root directory containing the batch
 * Run "Batch CIA 3DS Decryptor Redux.bat"
 
+## Supported operating systems (only x64)
+* Windows XP
+* Windows Vista
+* Windows 7
+* Windows 8.1
+* Windows 10
+* Windows 11
+
 ## Credits
 * `Batch CIA 3DS Decryptor` - [matiffeder](https://github.com/matiffeder/3DS-stuff)
 * `CTRTool.exe/MakeROM.exe` - [3DSGuy](https://github.com/3DSGuy/Project_CTR)
