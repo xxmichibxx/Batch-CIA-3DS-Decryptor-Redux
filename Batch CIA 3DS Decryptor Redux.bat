@@ -46,7 +46,6 @@ if "!validchars:%c1%=!" neq "%validchars%" set "newname=%newname%%c1%"
 goto validate
 
 :continueScript
-pause
 for %%a in (bin\*.ncch) do (
 	echo %date% - %time:~0,-3% = [i] Found unsed NCCH file. Start deleting.>>%logfile%
 	del "%%a"
@@ -92,9 +91,6 @@ for %%a in (*.cia) do (
 		for /f "tokens=4 delims= " %%z in ('findstr "TitleVersion" !content!') do set "TitleVersion=%%z"
 		set TitleId=!TitleId:~18!
 		set TitleVersion=!TitleVersion:~1,-1!
-		echo "!CUTN!"
-		echo "!FILE!"
-		echo "!CryptoKey!"
 		echo "!CryptoKey!" | findstr "Secure" >nul 2>nul
 		if "!errorlevel!"=="0" (
 			echo %date% - %time:~0,-3% = [i] Found CIA file. Start decrypting.>>%logfile%
@@ -107,12 +103,10 @@ for %%a in (*.cia) do (
         		echo %date% - %time:~0,-3% = [i] CIA file "!CUTN!.cia" [!TitleId! v!TitleVersion!] is a eShop or Gamecard title>>%logfile%
         		set CIAType=1
         		echo | bin\decrypt.exe "%%a" >nul 2>nul
-				pause
         		for %%f in ("bin\!CUTN!.*.ncch") do (
         			set ARG=!ARG! -i "%%f:!i!:!i!"
         			set /a i+=1
         		)
-				pause
         		echo %date% - %time:~0,-3% = [i] Calling makerom for eShop or Gamecard CIA [!TitleId!]>>%logfile%
         		bin\makerom.exe -f cia -ignoresign -target p -o "%rootdir%\!CUTN! Game-decrypted.cia"!ARG! -ver !TitleVersion! >nul 2>nul
 				if not exist "%rootdir%\!CUTN! Game-decrypted.cia" (
@@ -187,9 +181,7 @@ for %%a in (*.cia) do (
 				findstr /i /pr "0004000e" !FILE! | findstr /C:"Title id" >nul 2>nul
 				if not errorlevel 1 (
 					echo %date% - %time:~0,-3% = [i] Calling makerom for update CIA [!TitleId! v!TitleVersion!]>>%logfile%
-					echo bin\makerom.exe -f cia -ignoresign -target p -o "!CUTN! Patch-decrypted.cia"!ARG! -ver !TitleVersion! 
 					bin\makerom.exe -f cia -ignoresign -target p -o "!CUTN! Patch-decrypted.cia"!ARG! -ver !TitleVersion! >nul 2>nul
-					pause
 					if not exist "%rootdir%\!CUTN! Patch-decrypted.cia" (
 						echo %date% - %time:~0,-3% = [^^!] Decrypting failed for [!TitleId! v!TitleVersion!]>>%logfile%
 						set state=0
