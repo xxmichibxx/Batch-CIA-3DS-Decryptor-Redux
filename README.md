@@ -8,7 +8,7 @@ Original thread: https://gbatemp.net/threads/batch-cia-3ds-decryptor-a-simple-ba
 ## Redux Features
 * Improved error handling. Invalid CIAs, already decrypted and TWL CIAs will be detected.
 * Improved script logging. Logging title, title version. Check programlog.txt for more details in the log folder.
-* Proper CIA versioning, Decrypted files will use the same version as the source file. No more version 0 for update CIAs.
+* Proper CIA versioning. Decrypted files will use the same version as the source file. No more version 0 for update CIAs.
 * Fix for CIA Demo titles and System titles
 * Updated CTRTool to v1.1.1-X64
 * Updated makerom.exe to v0.18.4
@@ -24,9 +24,9 @@ Original thread: https://gbatemp.net/threads/batch-cia-3ds-decryptor-a-simple-ba
 * Copy CIA or 3DS files into the root directory containing the batch
 * Run "Batch CIA 3DS Decryptor Redux.bat"
 
-## Supported operating systems (only x64)
-* Windows XP or higher
-* Windows Server 2003 R2 or higher
+## Supported operating systems
+* Windows XP (x64) or higher
+* Windows Server 2003 R2 (x64) or higher
 
 ## Credits
 * `Batch CIA 3DS Decryptor` - [matiffeder](https://github.com/matiffeder/3DS-stuff)
