@@ -1,8 +1,10 @@
 @echo off
 color 1F
-mode con cols=60 lines=25
-set ScriptVersion=v1.0.1
+mode con cols=62 lines=25
+setlocal EnableDelayedExpansion
+set ScriptVersion=v1.0.2
 set state=0
+set convertToCCI=0
 set rootdir=%cd%
 set content=bin^\CTR_Content.txt
 set logfile=log^\programlog.txt
@@ -17,18 +19,41 @@ echo.>>%logfile%
 echo Batch CIA 3DS Decryptor Redux %ScriptVersion%>>%logfile%
 echo %date% - %time:~0,-3% = [i] Script started>>%logfile%
 if not "%PROCESSOR_ARCHITECTURE%"=="AMD64" goto unsupported
+if exist "*.cia" (
+    cls
+	echo.
+	echo   ##########################################################
+	echo   ###                                                    ###
+	echo   ###        Batch CIA 3DS Decryptor Redux %ScriptVersion%        ###
+	echo   ###                                                    ###
+	echo   ##########################################################
+	echo.
+	echo.
+	echo   CIA files were found. Do you want to convert them to CCI^?
+	echo.
+	echo   This applies to all CIA files that have been found.
+	echo.
+	echo   [Y] Yes
+	echo   [N] No
+	echo.
+	set /p question=Enter: 
+	if /i "!question!"=="y" goto EnableCCI
+	goto DisableCCI
+)
+:EnableCCI
+set convertToCCI=1
+:DisableCCI
 cls
 echo.
-echo   ########################################################
-echo   ###                                                  ###
-echo   ###       Batch CIA 3DS Decryptor Redux %ScriptVersion%       ###
-echo   ###                                                  ###
-echo   ########################################################
+echo   ##########################################################
+echo   ###                                                    ###
+echo   ###        Batch CIA 3DS Decryptor Redux %ScriptVersion%        ###
+echo   ###                                                    ###
+echo   ##########################################################
 echo.
 echo.
 echo   Decrypting...
 echo.
-setlocal EnableDelayedExpansion
 set "validchars=-_abcdefghijklmnopqrstuvwxyz1234567890. "
 for %%b in (*) do (
 	set "newname="
@@ -74,6 +99,7 @@ for %%a in (*.3ds) do (
 			set state=0
 		) else (
 			echo %date% - %time:~0,-3% = [i] Decrypting succeeded for !CUTN!.3ds>>%logfile%
+			set permanentstate=1
 		)
 	)
 	for %%a in (bin\*.ncch) do del /s "%%a" >nul 2>&1
@@ -112,6 +138,9 @@ for %%a in (*.cia) do (
 				if not exist "%rootdir%\!CUTN! Game-decrypted.cia" (
 					echo %date% - %time:~0,-3% = [^^!] Decrypting failed for [!TitleId! v!TitleVersion!]>>%logfile%
 					set state=0
+				) else (
+					echo %date% - %time:~0,-3% = [i] Decrypting succeeded for [!TitleId! v!TitleVersion!]>>%logfile%
+					set permanentstate=1
 				)
         	)
         	REM System Applications
@@ -137,6 +166,7 @@ for %%a in (*.cia) do (
 					set state=0
 				) else (
 					echo %date% - %time:~0,-3% = [i] Decrypting succeeded for [!TitleId! v!TitleVersion!]>>%logfile%
+					set permanentstate=1
 				)
         	)
         	REM Demos
@@ -157,6 +187,7 @@ for %%a in (*.cia) do (
 					set state=0
 				) else (
 					echo %date% - %time:~0,-3% = [i] Decrypting succeeded for [!TitleId! v!TitleVersion!]>>%logfile%
+					set permanentstate=1
 				)
         	)
         	REM Patches and DLCs
@@ -187,6 +218,7 @@ for %%a in (*.cia) do (
 						set state=0
 					) else (
 						echo %date% - %time:~0,-3% = [i] Decrypting succeeded for [!TitleId! v!TitleVersion!]>>%logfile%
+						set permanentstate=1
 					)
 				)
 				REM DLCs
@@ -199,6 +231,21 @@ for %%a in (*.cia) do (
 						set state=0
 					) else (
 						echo %date% - %time:~0,-3% = [i] Decrypting succeeded for [!TitleId! v!TitleVersion!]>>%logfile%
+						set permanentstate=1
+					)
+				)
+			)
+			if "!convertToCCI!"=="1" (
+				for %%a in (*-decrypted.cia) do (
+					set CUTN=%%~na
+					bin\makerom.exe -ciatocci "!CUTN!.cia" -o "!CUTN!.cci" >nul 2>nul
+					del /F /Q "%rootdir%\!CUTN!.cia" >nul 2>nul
+					if not exist "%rootdir%\!CUTN!.cci" (
+						echo %date% - %time:~0,-3% = [^^!] Converting to CCI failed for [!TitleId! v!TitleVersion!]>>%logfile%
+						set state=0
+					) else (
+						echo %date% - %time:~0,-3% = [i] Converting to CCI succeeded for [!TitleId! v!TitleVersion!]>>%logfile%
+						set permanentstate=1
 					)
 				)
 			)
@@ -224,15 +271,16 @@ for %%a in (*.cia) do (
 	for %%a in (bin\*.ncch) do del /s "%%a" >nul 2>&1
 )
 if exist "!content!" del /s "!content!" >nul 2>&1
+if "%permanentstate%"=="1" goto WarningFilesDecrypted
 if "%state%"=="0" goto noFilesDecrypted
 echo %date% - %time:~0,-3% = [i] Decrypting process succeeded>>%logfile%
 cls
 echo.
-echo   ########################################################
-echo   ###                                                  ###
-echo   ###       Batch CIA 3DS Decryptor Redux %ScriptVersion%       ###
-echo   ###                                                  ###
-echo   ########################################################
+echo   ##########################################################
+echo   ###                                                    ###
+echo   ###        Batch CIA 3DS Decryptor Redux %ScriptVersion%        ###
+echo   ###                                                    ###
+echo   ##########################################################
 echo.
 echo.
 echo   Decrypting finished^^!
@@ -268,14 +316,36 @@ exit/b
 echo %date% - %time:~0,-3% = [i] No files where decrypted>>%logfile%
 cls
 echo.
-echo   ########################################################
-echo   ###                                                  ###
-echo   ###       Batch CIA 3DS Decryptor Redux %ScriptVersion%       ###
-echo   ###                                                  ###
-echo   ########################################################
+echo   ##########################################################
+echo   ###                                                    ###
+echo   ###        Batch CIA 3DS Decryptor Redux %ScriptVersion%        ###
+echo   ###                                                    ###
+echo   ##########################################################
 echo.
 echo.
 echo   No files where decrypted^^!
+echo.
+echo   Please review "%logfile%" for more details.
+echo.
+echo   Press any key to exit.
+echo.
+echo %date% - %time:~0,-3% = [i] Script execution ended>>%logfile%
+pause
+endlocal
+exit
+
+:WarningFilesDecrypted
+echo %date% - %time:~0,-3% = [i] No files where decrypted>>%logfile%
+cls
+echo.
+echo   ##########################################################
+echo   ###                                                    ###
+echo   ###        Batch CIA 3DS Decryptor Redux %ScriptVersion%        ###
+echo   ###                                                    ###
+echo   ##########################################################
+echo.
+echo.
+echo   Some files where decrypted^^!
 echo.
 echo   Please review "%logfile%" for more details.
 echo.
@@ -290,11 +360,11 @@ exit
 echo %date% - %time:~0,-3% = [^!] 32-bit operating systems are not supported>>%logfile%
 cls
 echo.
-echo   ########################################################
-echo   ###                                                  ###
-echo   ###       Batch CIA 3DS Decryptor Redux %ScriptVersion%       ###
-echo   ###                                                  ###
-echo   ########################################################
+echo   ##########################################################
+echo   ###                                                    ###
+echo   ###        Batch CIA 3DS Decryptor Redux %ScriptVersion%        ###
+echo   ###                                                    ###
+echo   ##########################################################
 echo.
 echo.
 echo.
