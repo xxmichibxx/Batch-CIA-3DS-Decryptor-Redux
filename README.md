@@ -1,5 +1,5 @@
 # Batch CIA 3DS Decryptor Redux
-Batch decrypting for Nintendo 3DS games and applications (.3ds, .cia).
+Decrypting Nintendo 3DS games and applications (.3ds, .cia)
 
 Batch CIA 3DS Decryptor Redux is a rewritten version of the Batch CIA 3DS Decryptor by matiffeder.
 
