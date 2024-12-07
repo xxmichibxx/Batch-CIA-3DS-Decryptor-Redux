@@ -1,6 +1,6 @@
 @echo off
 color 1F
-REM mode con cols=64 lines=25
+mode con cols=64 lines=25
 setlocal EnableDelayedExpansion
 set ScriptVersion=v1.0.4
 set state=0
