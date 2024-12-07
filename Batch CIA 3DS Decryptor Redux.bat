@@ -1,9 +1,12 @@
 @echo off
 color 1F
-mode con cols=64 lines=25
+REM mode con cols=64 lines=25
 setlocal EnableDelayedExpansion
-set ScriptVersion=v1.0.3
+set ScriptVersion=v1.0.4
 set state=0
+set permanentstate=0
+set count3DS=0
+set countCIA=0
 set convertToCCI=0
 set rootdir=%cd%
 set content=bin^\CTR_Content.txt
@@ -73,11 +76,15 @@ goto validate
 
 :continueScript
 for %%a in (bin\*.ncch) do (
-	echo %date% - %time:~0,-3% = [i] Found unsed NCCH file. Start deleting.>>%logfile%
+	echo %date% - %time:~0,-3% = [i] Found unused NCCH file. Start deleting.>>%logfile%
 	del "%%a"
 )
+for %%x in (*.3ds) do set /a count3DS+=1
+if not "%count3DS%"=="0" ( 
+	if "%count3DS%"=="1" echo %date% - %time:~0,-3% = [i] Found %count3DS% CIA file. Start decrypting.>>%logfile%
+	if %count3DS% GTR 1 echo %date% - %time:~0,-3% = [i] Found %count3DS% CIA files. Start decrypting.>>%logfile%
+)
 for %%a in (*.3ds) do (
-	echo %date% - %time:~0,-3% = [i] Found 3DS file. Start decrypting.>>%logfile%
 	set CUTN=%%~na
 	if /i x!CUTN!==x!CUTN:decrypted=! (
 		echo | bin\decrypt.exe "%%a%" >nul
@@ -105,6 +112,11 @@ for %%a in (*.3ds) do (
 	)
 	for %%a in (bin\*.ncch) do del /s "%%a" >nul 2>&1
 )
+for %%x in (*.cia) do set /a countCIA+=1
+if not "%countCIA%"=="0" ( 
+	if "%countCIA%"=="1" echo %date% - %time:~0,-3% = [i] Found %countCIA% CIA file. Start decrypting.>>%logfile%
+	if %countCIA% GTR 1 echo %date% - %time:~0,-3% = [i] Found %countCIA% CIA files. Start decrypting.>>%logfile%
+)
 for %%a in (*.cia) do (
 	set CUTN=%%~na
 	if /i x!CUTN!==x!CUTN:decrypted=! (
@@ -120,7 +132,6 @@ for %%a in (*.cia) do (
 		set TitleVersion=!TitleVersion:~1,-1!
 		echo "!CryptoKey!" | findstr "Secure" >nul 2>nul
 		if "!errorlevel!"=="0" (
-			echo %date% - %time:~0,-3% = [i] Found CIA file. Start decrypting.>>%logfile%
         	set /a i=0
         	set ARG=
         	REM eShop Gamecard Applications
@@ -148,12 +159,7 @@ for %%a in (*.cia) do (
         	findstr /i /pr "00040010 0004001b 00040030 0004009b 000400db 00040130 00040138" !FILE! | findstr /C:"Title id" >nul 2>nul
         	if not errorlevel 1 (
         		set state=1
-        		findstr /i /pr "00040010" !FILE! | findstr /C:"Title id" echo %date% - %time:~0,-3% = [i] CIA file "!CUTN!.cia" is a system application>>%logfile%
-        		findstr /i /pr "0004001b 000400db" !FILE! | findstr /C:"Title id" echo %date% - %time:~0,-3% = [i] CIA file "!CUTN!.cia" is a system data archive>>%logfile%
-        		findstr /i /pr "00040030" !FILE! | findstr /C:"Title id" echo %date% - %time:~0,-3% = [i] CIA file "!CUTN!.cia" is a system applet>>%logfile%
-        		findstr /i /pr "0004009b" !FILE! | findstr /C:"Title id" echo %date% - %time:~0,-3% = [i] CIA file "!CUTN!.cia" is a shared data archive>>%logfile%
-        		findstr /i /pr "00040130" !FILE! | findstr /C:"Title id" echo %date% - %time:~0,-3% = [i] CIA file "!CUTN!.cia" is a system module>>%logfile%
-        		findstr /i /pr "00040138" !FILE! | findstr /C:"Title id" echo %date% - %time:~0,-3% = [i] CIA file "!CUTN!.cia" is a system firmware>>%logfile%
+        		call :checkCIASysFile
         		set CIAType=1
         		echo | bin\decrypt.exe "%%a" >nul 2>nul
         		for %%f in ("bin\!CUTN!.*.ncch") do (
@@ -218,7 +224,6 @@ for %%a in (*.cia) do (
 						set state=0
 					) else (
 						echo %date% - %time:~0,-3% = [i] Decrypting succeeded for [!TitleId! v!TitleVersion!]>>%logfile%
-						if "!convertToCCI!"=="0" set permanentstate=1
 					)
 				)
 				REM DLCs
@@ -231,7 +236,6 @@ for %%a in (*.cia) do (
 						set state=0
 					) else (
 						echo %date% - %time:~0,-3% = [i] Decrypting succeeded for [!TitleId! v!TitleVersion!]>>%logfile%
-						if "!convertToCCI!"=="0" set permanentstate=1
 					)
 				)
 			)
@@ -263,18 +267,14 @@ for %%a in (*.cia) do (
 			)
 		)
 		REM TWL titles
-		findstr /i /pr "00048005 0004800f 00048005" !FILE! >nul 2>nul
-		if "!errorlevel!"=="0" (
-			findstr /i /pr "00048005" !FILE! | findstr /C:"Title id" echo %date% - %time:~0,-3% = [i] CTRTool does not support TWL titles "!CUTN!.cia" [!TitleId! v!TitleVersion!] [System Application]>>%logfile%
-			findstr /i /pr "0004800f" !FILE! | findstr /C:"Title id" echo %date% - %time:~0,-3% = [i] CTRTool does not support TWL titles "!CUTN!.cia" [!TitleId! v!TitleVersion!] [System Data Archive]>>%logfile%
-			findstr /i /pr "00048005" !FILE! | findstr /C:"Title id" echo %date% - %time:~0,-3% = [i] CTRTool does not support TWL titles "!CUTN!.cia" [!TitleId! v!TitleVersion!] [DSiWare Ports]>>%logfile%
-		)
+		findstr /i /pr "00048005 0004800f 00048004" !FILE! >nul 2>nul
+		if "!errorlevel!"=="0" call :checkCIATWLFile
 	)
 	for %%a in (bin\*.ncch) do del /s "%%a" >nul 2>&1
 )
 if exist "!content!" del /s "!content!" >nul 2>&1
 if "%state%"=="0" if "%permanentstate%"=="0" goto noFilesDecrypted
-if "%state%"=="0" if "%permanentstate%"=="1" goto WarningFilesDecrypted
+if "%state%"=="0" if "%permanentstate%"=="1" goto someFilesDecrypted
 echo %date% - %time:~0,-3% = [i] Decrypting process succeeded>>%logfile%
 cls
 echo.
@@ -336,8 +336,8 @@ pause
 endlocal
 exit
 
-:WarningFilesDecrypted
-echo %date% - %time:~0,-3% = [i] No files where decrypted>>%logfile%
+:someFilesDecrypted
+echo %date% - %time:~0,-3% = [i] Some files where decrypted>>%logfile%
 cls
 echo.
 echo   ############################################################
@@ -379,3 +379,27 @@ echo.
 echo %date% - %time:~0,-3% = [i] Script execution ended>>%logfile%
 pause
 exit
+
+:checkCIASysFile
+findstr /i /pr "00040010" !FILE! | findstr /C:"Title id" >nul 2>nul
+if "%errorlevel%"=="0" echo %date% - %time:~0,-3% = [i] CIA file "!CUTN!.cia" is a system application>>%logfile%
+findstr /i /pr "0004001b 000400db" !FILE! | findstr /C:"Title id" >nul 2>nul
+if "%errorlevel%"=="0" echo %date% - %time:~0,-3% = [i] CIA file "!CUTN!.cia" is a system data archive>>%logfile%
+findstr /i /pr "00040030" !FILE! | findstr /C:"Title id" >nul 2>nul
+if "%errorlevel%"=="0" echo %date% - %time:~0,-3% = [i] CIA file "!CUTN!.cia" is a system applet>>%logfile%
+findstr /i /pr "0004009b" !FILE! | findstr /C:"Title id" >nul 2>nul
+if "%errorlevel%"=="0" echo %date% - %time:~0,-3% = [i] CIA file "!CUTN!.cia" is a shared data archive>>%logfile%
+findstr /i /pr "00040130" !FILE! | findstr /C:"Title id" >nul 2>nul
+if "%errorlevel%"=="0" echo %date% - %time:~0,-3% = [i] CIA file "!CUTN!.cia" is a system module>>%logfile%
+findstr /i /pr "00040138" !FILE! | findstr /C:"Title id" >nul 2>nul
+if "%errorlevel%"=="0" echo %date% - %time:~0,-3% = [i] CIA file "!CUTN!.cia" is a system firmware>>%logfile%
+exit /b
+
+:checkCIATWLFile
+findstr /i /pr "00048005" !FILE! | findstr /C:"TitleId"
+if "%errorlevel%"=="0" echo %date% - %time:~0,-3% = [i] CTRTool does not support TWL titles "!CUTN!.cia" [!TitleId! v!TitleVersion!] [System Application]>>%logfile%
+findstr /i /pr "0004800f" !FILE! | findstr /C:"TitleId"
+if "%errorlevel%"=="0" echo %date% - %time:~0,-3% = [i] CTRTool does not support TWL titles "!CUTN!.cia" [!TitleId! v!TitleVersion!] [System Data Archive]>>%logfile%
+findstr /i /pr "00048004" !FILE! | findstr /C:"TitleId"
+if "%errorlevel%"=="0" echo %date% - %time:~0,-3% = [i] CTRTool does not support TWL titles "!CUTN!.cia" [!TitleId! v!TitleVersion!] [3DS DSiWare Ports]>>%logfile%
+exit /b
