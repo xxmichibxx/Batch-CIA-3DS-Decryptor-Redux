@@ -35,6 +35,7 @@ Original thread: https://gbatemp.net/threads/batch-cia-3ds-decryptor-a-simple-ba
 ## Notes
 * Already decrypted CIA files won't be converted to CCI. This tool is still a decrypter, not a converter.
 * TWL files (Nintendo DSi) are not compatible with CTRTool. TWL CIAs do not need to be decrypted.
+* Files with an exclamation mark cannot be decrypted. The decryptor will report them as invalid because it is unable to find them.
 
 ## Credits
 * `Batch CIA 3DS Decryptor` - [matiffeder](https://github.com/matiffeder/3DS-stuff)
