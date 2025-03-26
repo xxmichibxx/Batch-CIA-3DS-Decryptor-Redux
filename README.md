@@ -14,7 +14,7 @@ Original thread: https://gbatemp.net/threads/batch-cia-3ds-decryptor-a-simple-ba
 * Improved script logging. Logging title, title version. Check programlog.txt for more details in the log folder.
 * Proper CIA versioning. Decrypted files will use the same version as the source file. No more version 0 for update CIAs.
 * Fixed decryption for CIA Demo titles and System titles
-* Updated CTRTool to v1.2.0 (x64)
+* Updated CTRTool to v1.2.1 (x64)
 * Updated makerom.exe to v0.18.4 (x64)
 * Including seeddb.bin for games using seed crypto introduced in 9.6.0-24
 
