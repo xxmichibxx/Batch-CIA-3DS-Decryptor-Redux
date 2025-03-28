@@ -10,18 +10,18 @@ Original thread: https://gbatemp.net/threads/batch-cia-3ds-decryptor-a-simple-ba
 ![GitHub Release](https://img.shields.io/github/v/release/xxmichibxx/Batch-CIA-3DS-Decryptor-Redux) ![Issues](https://img.shields.io/github/issues/xxmichibxx/Batch-CIA-3DS-Decryptor-Redux) ![GitHub Repo stars](https://img.shields.io/github/stars/xxmichibxx/Batch-CIA-3DS-Decryptor-Redux) 
 
 ## Redux features
-* Improved error handling. Invalid CIAs, already decrypted and TWL CIAs will be detected.
-* Improved script logging. Logging title, title version. Check programlog.txt for more details in the log folder.
-* Proper CIA versioning. Decrypted files will use the same version as the source file. No more version 0 for update CIAs.
-* Fixed decryption for CIA Demo titles and System titles
+* Improved error handling: Invalid and already decrypted CIAs will be detected.
+* Improved script logging: Logging title, title version. Check programlog.txt for more details in the log folder.
+* Proper CIA versioning: Decrypted files will use the same version as the source file. No more version 0 for update CIAs.
+* Fixed decryption for CIA Demo, System and TWL titles
 * Updated CTRTool to v1.2.1 (x64)
 * Updated makerom.exe to v0.18.4 (x64)
 * Including seeddb.bin for games using seed crypto introduced in 9.6.0-24
 
 ## Original features
-* DLC/Patch CIA > Decrypted CIA, able to install in Citra
-* 3DS Games > Decrypted and trimmed 3DS, so it is smaller
-* CIA Games > Decrypted CCI (NCSD), not CXI (NCCH)
+* DLC/Patch CIA: Decrypted CIA, able to install in emulators
+* 3DS Games: Decrypted and trimmed 3DS, so it is smaller
+* CIA Games: Decrypted CCI (NCSD), not CXI (NCCH)
 * Auto detect CIA type (DLC/Patch/Game)
 
 ## Usage
@@ -29,12 +29,12 @@ Original thread: https://gbatemp.net/threads/batch-cia-3ds-decryptor-a-simple-ba
 * Run "Batch CIA 3DS Decryptor Redux.bat"
 
 ## Supported operating systems
-* Windows XP (x64) or higher
+* Windows XP Service Pack 3 (x64) or higher
 * Windows Server 2003 R2 (x64) or higher
 
 ## Notes
 * Already decrypted CIA files won't be converted to CCI. This tool is still a decrypter, not a converter.
-* TWL files (Nintendo DSi) are not compatible with CTRTool. TWL CIAs do not need to be decrypted.
+* TWL CIAs (Nintendo DSi) can be decrypted, but should only be installed on retail consoles. Current 3DS emulators don't support TWL CIAs. Use a DSi emulator like melonDS for playing TWL titles.
 * Files with an exclamation mark cannot be decrypted. The decryptor will report them as invalid because it is unable to find them.
 
 ## Credits
