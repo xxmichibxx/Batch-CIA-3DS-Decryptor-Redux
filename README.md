@@ -28,13 +28,14 @@ Original thread: https://gbatemp.net/threads/batch-cia-3ds-decryptor-a-simple-ba
 * Copy CIA or 3DS files into the root directory containing the batch
 * Run "Batch CIA 3DS Decryptor Redux.bat"
 
-## Supported operating systems
-* Windows XP Service Pack 3 (x64) or higher
-* Windows Server 2003 R2 (x64) or higher
+## Requirements
+* Windows 7 SP1 (x64) or higher
+* Windows Server 2008 R2 SP1 (x64) or higher
+* Visual C++ Redistributable for Visual Studio 2015
 
 ## Notes
 * Already decrypted CIA files won't be converted to CCI. This tool is still a decrypter, not a converter.
-* TWL CIAs (Nintendo DSi) can be decrypted, but should only be installed on retail consoles. Current 3DS emulators don't support TWL CIAs. Use a DSi emulator like melonDS for playing TWL titles.
+* TWL CIAs (DSi) can be decrypted, but should only be installed on retail consoles. Current 3DS emulators don't support TWL CIAs. Use a DSi emulator like melonDS for playing TWL titles.
 * Files with an exclamation mark cannot be decrypted. The decryptor will report them as invalid because it is unable to find them.
 
 ## Credits
