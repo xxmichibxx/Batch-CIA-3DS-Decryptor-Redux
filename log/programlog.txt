@@ -4,6 +4,6 @@ Batch CIA 3DS Decryptor Redux
 [!] = Error
 
 Batch CIA 3DS Decryptor Redux v1.0.5
-28.03.2025 - 16:39:22 = [i] Script started
-28.03.2025 - 16:39:22 = [^] No CIA or 3DS were found
-28.03.2025 - 16:39:22 = [i] Script execution ended
+03.04.2025 - 19:07:12 = [i] Script started
+03.04.2025 - 19:07:13 = [^] No CIA or 3DS were found
+03.04.2025 - 19:07:13 = [i] Script execution ended

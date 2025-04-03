@@ -1,8 +1,9 @@
 @echo off
 color 1F
-REM mode con cols=64 lines=25
+mode 64, 26
+cd /d "%~dp0"
 setlocal EnableDelayedExpansion
-set ScriptVersion=v1.0.5
+set ScriptVersion=v1.0.6
 set totalCount=0
 set finalCount=0
 set count3DS=0
@@ -12,6 +13,8 @@ set CCIErrCount=0
 set DSErrCount=0
 set convertToCCI=0
 set golfEvent=0
+set NCCHDeleted=0
+set FancyArt=0
 set rootdir=%cd%
 set content=bin^\CTR_Content.txt
 set logfile=log^\programlog.txt
@@ -21,13 +24,16 @@ echo Batch CIA 3DS Decryptor Redux>!logfile!
 echo [i] = Information>>!logfile!
 echo [^^] = Warning>>!logfile!
 echo [^^!] = Error>>!logfile!
-echo.>>!logfile!
+echo:>>!logfile!
 echo Batch CIA 3DS Decryptor Redux !ScriptVersion!>>!logfile!
 echo %date% - %time:~0,-3% = [i] Script started>>!logfile!
 if not "%PROCESSOR_ARCHITECTURE%"=="AMD64" goto unsupported
+ver | find "5.2" >nul
+if "%errorlevel%"=="0" goto unsupported
 for %%a in (bin\*.ncch) do (
-	echo %date% - %time:~0,-3% = [i] Found unused NCCH file. Start deleting.>>!logfile!
-	del "%%a"
+	if not "!NCCHDeleted!"=="1" echo %date% - %time:~0,-3% = [i] Found unused NCCH file[s]. Start deleting.>>!logfile!
+	del "%%a" >nul 2>&1
+	set NCCHDeleted=1
 )
 set "validchars=-_abcdefghijklmnopqrstuvwxyz1234567890. "
 for %%b in (*) do (
@@ -48,38 +54,44 @@ set /a totalCount=!countCIA!+!count3DS!
 if "!totalCount!"=="0" goto noFilesFound
 if !countCIA! GEQ 1 (
 	cls
-	echo.
+	echo:
 	call :ReduxBanner
-	echo.
-	echo.
+	echo:
+	echo:
 	if "!countCIA!"=="1" (
 		echo   A CIA file was found. Do you want to convert it to CCI^?
-		echo   Please be aware that this doesn^'t work with DLCs, updates
-		echo   or TWL titles.
 	) else (
 		echo   !countCIA! CIA files were found. Do you want to convert them to CCI^?
-		echo   Please be aware that this doesn^'t work with DLCs, updates
-		echo   or TWL titles.
-		echo.
-		echo   This applies to all CIA files that have been found.
 	)
-	echo.
+	echo   Please be aware that this doesn^'t work with the following
+	echo   titles:
+	echo:
+	echo   - Downloadable Content [DLC]
+	echo   - eShop Demos
+	echo   - System titles
+	echo   - TWL titles [DSi]
+	echo   - Updates
+	echo:
+	echo   This applies to all CIA files that have been found.
+	echo   The default option is No [N]. If you^'re unsure choose No.
+	echo:
 	echo   [Y] Yes
 	echo   [N] No
-	echo.
+	echo:
 	set /p question=Enter: 
 	if /i "!question!"=="y" set convertToCCI=1
+	if /i "!question!"=="1" set convertToCCI=1
 )
 cls
-echo.
+echo:
 call :ReduxBanner
-echo.
-echo.
+echo:
+echo:
 echo   Decrypting...
-echo.
+call :ReduxFancyArt
 if not "!count3DS!"=="0" ( 
-	if "!count3DS!"=="1" echo %date% - %time:~0,-3% = [i] Found !count3DS! 3DS file. Start decrypting.>>!logfile!
-	if !count3DS! GTR 1 echo %date% - %time:~0,-3% = [i] Found !count3DS! 3DS files. Start decrypting.>>!logfile!
+	if "!count3DS!"=="1" echo %date% - %time:~0,-3% = [i] Found !count3DS! 3DS file. Start decrypting...>>!logfile!
+	if !count3DS! GTR 1 echo %date% - %time:~0,-3% = [i] Found !count3DS! 3DS files. Start decrypting...>>!logfile!
 )
 for %%a in (*.3ds) do (
 	set FileName=%%~na
@@ -117,127 +129,49 @@ for %%a in (*.3ds) do (
 			)
 		)
 		for %%a in (bin\*.ncch) do del /s "%%a" >nul 2>&1
+	) else (
+		echo %date% - %time:~0,-3% = [^^^^] 3DS file "!FileName!.3ds" was already decrypted>>!logfile!
+		set /a finalCount+=1
 	)
 )
 if not "!countCIA!"=="0" ( 
-	if "!countCIA!"=="1" echo %date% - %time:~0,-3% = [i] Found !countCIA! CIA file. Start decrypting.>>!logfile!
-	if !countCIA! GTR 1 echo %date% - %time:~0,-3% = [i] Found !countCIA! CIA files. Start decrypting.>>!logfile!
+	if "!countCIA!"=="1" echo %date% - %time:~0,-3% = [i] Found !countCIA! CIA file. Start decrypting...>>!logfile!
+	if !countCIA! GTR 1 echo %date% - %time:~0,-3% = [i] Found !countCIA! CIA files. Start decrypting...>>!logfile!
 )
 for %%a in (*.cia) do (
 	set FileName=%%~na
 	set fullFileName=%%~nxa
-	if /i x!FileName!==x!FileName:decrypted=! (
-		if exist "!content!" del /s "!content!" >nul 2>&1
-		bin\ctrtool.exe --seeddb=bin\seeddb.bin "!fullFileName!" >!content!
-		set FILE=!content!
-		set CryptoKey=1
-		set CIAType=0
-		call :analyzeFileCIA
-		echo "!CryptoKey!" | findstr "Secure" >nul 2>&1
-		if "!errorlevel!"=="0" (
-        	set /a i=0
-        	set ARG=
-        	REM eShop Gamecard Applications
-			echo "!TitleId!" | findstr /i "00040000" >nul 2>&1
-        	if not errorlevel 1 (
-        		echo %date% - %time:~0,-3% = [i] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is a eShop or Gamecard title>>!logfile!
-        		set CIAType=1
-        		echo | bin\decrypt.exe "%%a" >nul 2>&1
-				call :subroutineRename
-        		for %%f in ("bin\tmp.*.ncch") do (
-        			set ARG=!ARG! -i "%%f:!i!:!i!"
-        			set /a i+=1
-        		)
-        		call :makeromCIA Game
-				if "!golfEvent!"=="0" if /i "!TitleId!"=="0004000000042D00" call :golf
-				if "!golfEvent!"=="0" if /i "!TitleId!"=="0004000000042B00" call :golf
-				if "!golfEvent!"=="0" if /i "!TitleId!"=="0004000000181B00" call :golf
-        	)
-        	REM System Applications
-        	echo "!TitleId!" | findstr /i "00040010 0004001b 00040030 0004009b 000400db 00040130 00040138" >nul 2>&1
-        	if not errorlevel 1 (
-        		call :checkCIASysFile
-        		set CIAType=1
-        		echo | bin\decrypt.exe "%%a" >nul 2>&1
-				call :subroutineRename
-        		for %%f in ("bin\tmp.*.ncch") do (
-        			set ARG=!ARG! -i "%%f:!i!:!i!"
-        			set /a i+=1
-        		)
-        		call :makeromCIA System
-        	)
-        	REM Demos
-			echo "!TitleId!" | findstr /i "00040002" >nul 2>&1
-        	if not errorlevel 1 (
-        		echo %date% - %time:~0,-3% = [i] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is a demo title>>!logfile!
-        		set CIAType=1
-        		echo | bin\decrypt.exe "%%a" >nul 2>&1
-				call :subroutineRename
-        		for %%f in ("bin\tmp.*.ncch") do (
-        			set ARG=!ARG! -i "%%f:!i!:!i!"
-        			set /a i+=1
-        		)
-				call :makeromCIA Demo
+	if exist "!FileName!*-decrypted.cia" (
+		if "!convertToCCI!"=="1" (
+			if not exist "!FileName!*-decrypted.cci" (
+				bin\ctrtool.exe --seeddb=bin\seeddb.bin "!fullFileName!" >!content!
+				set FILE=!content!
+				call :analyzeFileCIA
+				call :convertToCCIFunction
 			)
-        	REM Patches and DLCs
-			echo "!TitleId!" | findstr /i /pr "0004000e 0004008c" >nul 2>&1
-        	if not errorlevel 1 (
-        		echo %date% - %time:~0,-3% = [i] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is a update or DLC title>>!logfile!
-        		set CIAType=1
-        		set TEXT="ContentId:"
-        		set /a X=0
-				echo | bin\decrypt.exe "%%a" >nul 2>&1
-				call :subroutineRename
-				for %%f in ("bin\tmp.*.ncch") do (
-					set ARG=!ARG! -i "%%f:!i!:!i!"
-					set /a i+=1
-				)
-				for /f "delims=" %%d in ('findstr /c:!TEXT! !FILE!') do (
-					set CONLINE=%%d
-					call :EXF
-				)
-				REM Patches
-				findstr /i /pr "0004000e" !FILE! | findstr /C:"Title id" >nul 2>&1
-				if not errorlevel 1 (
-					call :makeromCIA Patch
-				)
-				REM DLCs
-				findstr /i /pr "0004008c" !FILE! | findstr /C:"Title id" >nul 2>&1
-				if not errorlevel 1 (
-					call :makeromCIA DLC
-				)
-			)
+		) else (
+			echo %date% - %time:~0,-3% = [^^^^] CIA file "!FileName!.cia" was already decrypted>>!logfile!
+			set /a finalCount+=1
 		)
-		if not "!CIATYPE!"=="1" (
-			REM TWL titles
-			call :analyzeFileCIATWL
-			if "!CryptoKey!"=="YES" (
-				echo "!TitleId!" | findstr /i /pr "00048005 0004800f 00048004" >nul 2>&1
-				if not errorlevel 1 (
-					echo "!TitleId!" | findstr /i "00048005" >nul 2>&1
-					if "!errorlevel!"=="0" echo %date% - %time:~0,-3% = [i] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is a TWL title [System Application]>>%logfile%
-					echo "!TitleId!" | findstr /i "0004800f" >nul 2>&1
-					if "!errorlevel!"=="0" echo %date% - %time:~0,-3% = [i] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is a TWL title [System Data Archive]>>%logfile%
-					echo "!TitleId!" | findstr /i "00048004" >nul 2>&1
-					if "!errorlevel!"=="0" echo %date% - %time:~0,-3% = [i] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is a TWL title [3DS DSiWare Ports]>>%logfile%
-					bin\ctrtool.exe --contents=bin\00000000.app --meta=bin\00000000.app "!FileName!.cia" >nul 2>&1
-					ren "bin\00000000.app.0000.00000000" "00000000.app" >nul 2>&1
-					call :makeromTWL
-				)
-			) else (
-				if "!CryptoKey!"=="NO" (
-					echo %date% - %time:~0,-3% = [^^^^] TWL CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is already decrypted>>!logfile!
-					set /a CIAErrCount+=1
+	) else (
+		echo !FileName! | find "-decrypted" >nul
+		if not "!errorlevel!"=="0" (
+			if "!convertToCCI!"=="1" (
+				if exist "!FileName!*-decrypted.cci" (
+					echo %date% - %time:~0,-3% = [^^^^] CIA file "!FileName!.cia" was already converted into CCI>>!logfile!
+					set /a finalCount+=1
 				) else (
-					if "!CIATYPE!"=="0" (
-						echo %date% - %time:~0,-3% = [^^!] Could not determine CIA type [!FileName!.cia]>>!logfile!
-						echo %date% - %time:~0,-3% = [^^!] Please report !TitleId! v!TitleVersion! to the developer>>!logfile!
+					if not exist "!FileName!*-decrypted.cia" (
+						call :CIAFunction
+					)
+					if not exist "!FileName!*-decrypted.cci" if exist "!FileName!*-decrypted.cia" (
+						call :convertToCCIFunction
 					)
 				)
+			) else (
+				call :CIAFunction
 			)
 		)
-		call :convertToCCIFunction
-		call :otherChecks
 	)
 	for %%a in (bin\*.ncch) do del /s "%%a" >nul 2>&1
 )
@@ -275,11 +209,123 @@ for %%F in (bin\*.ncch) do (
 )
 exit /b
 
-:otherChecks
-echo "!CryptoKey!" | findstr "None" >nul 2>&1
-if "!errorlevel!"=="0" (
-	echo %date% - %time:~0,-3% = [^^^^] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is already decrypted>>!logfile!
-	set /a CIAErrCount+=1
+:CIAFunction
+if /i x!FileName!==x!FileName:decrypted=! (
+	if exist "!content!" del /s "!content!" >nul 2>&1
+	bin\ctrtool.exe --seeddb=bin\seeddb.bin "!fullFileName!" >!content!
+	set FILE=!content!
+	set CryptoKey=1
+	set CIAType=0
+	call :analyzeFileCIA
+	echo "!CryptoKey!" | findstr "Secure" >nul 2>&1
+	if "!errorlevel!"=="0" (
+		set /a i=0
+		set ARG=
+		REM eShop Gamecard Applications
+		echo "!TitleId!" | findstr /i "00040000" >nul 2>&1
+		if not errorlevel 1 (
+			echo %date% - %time:~0,-3% = [i] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is a eShop or Gamecard title>>!logfile!
+			set CIAType=1
+			echo | bin\decrypt.exe "!FileName!.cia" >nul 2>&1
+			call :subroutineRename
+			for %%f in ("bin\tmp.*.ncch") do (
+				set ARG=!ARG! -i "%%f:!i!:!i!"
+				set /a i+=1
+			)
+			call :makeromCIA Game
+			if "!golfEvent!"=="0" if /i "!TitleId!"=="0004000000042D00" call :golf
+			if "!golfEvent!"=="0" if /i "!TitleId!"=="0004000000042B00" call :golf
+			if "!golfEvent!"=="0" if /i "!TitleId!"=="0004000000181B00" call :golf
+		)
+		REM System Applications
+		echo "!TitleId!" | findstr /i "00040010 0004001b 00040030 0004009b 000400db 00040130 00040138" >nul 2>&1
+		if not errorlevel 1 (
+			call :checkCIASysFile
+			set CIAType=1
+			echo | bin\decrypt.exe "!FileName!.cia" >nul 2>&1
+			call :subroutineRename
+			for %%f in ("bin\tmp.*.ncch") do (
+				set ARG=!ARG! -i "%%f:!i!:!i!"
+				set /a i+=1
+			)
+			call :makeromCIA System
+		)
+		REM Demos
+		echo "!TitleId!" | findstr /i "00040002" >nul 2>&1
+		if not errorlevel 1 (
+			echo %date% - %time:~0,-3% = [i] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is a demo title>>!logfile!
+			set CIAType=1
+			echo | bin\decrypt.exe "%%a" >nul 2>&1
+			call :subroutineRename
+			for %%f in ("bin\tmp.*.ncch") do (
+				set ARG=!ARG! -i "%%f:!i!:!i!"
+				set /a i+=1
+			)
+			call :makeromCIA Demo
+		)
+		REM Patches and DLCs
+		echo "!TitleId!" | findstr /i /pr "0004000e 0004008c" >nul 2>&1
+		if not errorlevel 1 (
+			echo %date% - %time:~0,-3% = [i] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is a update or DLC title>>!logfile!
+			set CIAType=1
+			set TEXT="ContentId:"
+			set /a X=0
+			echo | bin\decrypt.exe "!FileName!.cia" >nul 2>&1
+			call :subroutineRename
+			for %%f in ("bin\tmp.*.ncch") do (
+				set ARG=!ARG! -i "%%f:!i!:!i!"
+				set /a i+=1
+			)
+			for /f "delims=" %%d in ('findstr /c:!TEXT! !FILE!') do (
+				set CONLINE=%%d
+				call :EXF
+			)
+			REM Patches
+			findstr /i /pr "0004000e" !FILE! | findstr /C:"Title id" >nul 2>&1
+			if not errorlevel 1 (
+				call :makeromCIA Patch
+			)
+			REM DLCs
+			findstr /i /pr "0004008c" !FILE! | findstr /C:"Title id" >nul 2>&1
+			if not errorlevel 1 (
+				call :makeromCIA DLC
+			)
+		)
+	)
+	echo "!CryptoKey!" | findstr "None" >nul 2>&1
+	if "!errorlevel!"=="0" (
+		echo %date% - %time:~0,-3% = [^^^^] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is already decrypted>>!logfile!
+		set /a CIAErrCount+=1
+	) else (
+		if not "!CIATYPE!"=="1" (
+			REM TWL titles
+			call :analyzeFileCIATWL
+			if "!CryptoKey!"=="YES" (
+				echo "!TitleId!" | findstr /i /pr "00048005 0004800f 00048004" >nul 2>&1
+				if not errorlevel 1 (
+					echo "!TitleId!" | findstr /i "00048005" >nul 2>&1
+					if "!errorlevel!"=="0" echo %date% - %time:~0,-3% = [i] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is a TWL title [System Application]>>%logfile%
+					echo "!TitleId!" | findstr /i "0004800f" >nul 2>&1
+					if "!errorlevel!"=="0" echo %date% - %time:~0,-3% = [i] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is a TWL title [System Data Archive]>>%logfile%
+					echo "!TitleId!" | findstr /i "00048004" >nul 2>&1
+					if "!errorlevel!"=="0" echo %date% - %time:~0,-3% = [i] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is a TWL title [3DS DSiWare Ports]>>%logfile%
+					bin\ctrtool.exe --contents=bin\00000000.app --meta=bin\00000000.app "!FileName!.cia" >nul 2>&1
+					ren "bin\00000000.app.0000.00000000" "00000000.app" >nul 2>&1
+					call :makeromTWL
+				)
+			) else (
+				if "!CryptoKey!"=="NO" (
+					echo %date% - %time:~0,-3% = [^^^^] TWL CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is already decrypted>>!logfile!
+					set /a CIAErrCount+=1
+				) else (
+					if "!CIATYPE!"=="0" (
+						echo %date% - %time:~0,-3% = [^^!] Could not determine CIA type [!FileName!.cia]>>!logfile!
+						echo %date% - %time:~0,-3% = [^^!] Please report !TitleId! v!TitleVersion! to the developer>>!logfile!
+					)
+				)
+			)
+		)
+	)
 )
 set /p ctrtool_data=<!content!
 echo "!ctrtool_data!" | findstr "ERROR" >nul 2>&1
@@ -296,9 +342,9 @@ for /f "delims=" %%y in ('findstr /c:"Crypto Key" !content!') do set "CryptoKey=
 exit /b
 
 :analyzeFileCIATWL
-for /f "tokens=3 delims= " %%x in ('findstr /c:"TitleId:" bin\CTR_Content.txt') do set "TitleId=%%x"
-for /f "tokens=3 delims= " %%z in ('findstr "TitleVersion" bin\CTR_Content.txt') do set "TitleVersion=%%z"
-for /f "tokens=3 delims= " %%y in ('findstr /c:"Encrypted" bin\CTR_Content.txt') do set "CryptoKey=%%y"
+for /f "tokens=3 delims= " %%x in ('findstr /c:"TitleId:" !content!') do set "TitleId=%%x"
+for /f "tokens=3 delims= " %%z in ('findstr "TitleVersion" !content!') do set "TitleVersion=%%z"
+for /f "tokens=3 delims= " %%y in ('findstr /c:"Encrypted" !content!') do set "CryptoKey=%%y"
 exit /b
 
 :analyzeFile3DS
@@ -339,24 +385,23 @@ if not exist "!FileName! TWL-decrypted.cia" (
 exit /b
 
 :convertToCCIFunction
-if "!convertToCCI!"=="1" (
-	echo "!TitleId!" | findstr /i /pr "0004000e 0004008c 00048005 0004800f 00048004" >nul 2>&1
-	if "!errorlevel!"=="0" (
-		for %%a in (!FileName!*-decrypted.cia) do del /F /Q "!FileName!*-decrypted.cia"
-		echo %date% - %time:~0,-3% = [^^!] Converting to CCI for updates, DLCs and TWL titles are not supported [!TitleId! v!TitleVersion!]>>!logfile!
-		set /a CCIErrCount+=1
-	) else (
-		for %%a in (*-decrypted.cia) do (
-			set FileName=%%~na
-			bin\makerom.exe -ciatocci "!FileName!.cia" -o "!FileName!.cci" >nul 2>&1
-			if not exist "!FileName!.cci" (
-				echo %date% - %time:~0,-3% = [^^!] Converting to CCI failed [!TitleId! v!TitleVersion!]>>!logfile!
-				set /a CCIErrCount+=1
-			) else (
-				del /F /Q "!FileName!.cia"
-				echo %date% - %time:~0,-3% = [i] Converting to CCI succeeded [!TitleId! v!TitleVersion!]>>!logfile!
-				set /a finalCount+=1
-			)
+echo "!TitleId!" | findstr /i /pr "000400db 0004001b 0004009b 00040010 00040030 00040130 0004000e 0004008c 00048005 0004800f 00048004 00040002" >nul 2>&1
+if "!errorlevel!"=="0" (
+	if exist "!FileName!*-decrypted.cia" del /F /Q "!FileName!*-decrypted.cia"
+	echo %date% - %time:~0,-3% = [^^!] Converting to CCI for this title ist not supported [!TitleId! v!TitleVersion!]>>!logfile!
+	set /a CCIErrCount+=1
+) else (
+	for %%a in (!FileName!*-decrypted.cia) do (
+		set FileName=%%~na
+		bin\makerom.exe -ciatocci "!FileName!.cia" -o "!FileName!.cci" >nul 2>&1
+		if not exist "!FileName!.cci" (
+			echo %date% - %time:~0,-3% = [^^!] Converting to CCI failed [!FileName!.cia]>>!logfile!
+			if exist "!FileName!*-decrypted.cia" del /F /Q "!FileName!*-decrypted.cia"
+			set /a CCIErrCount+=1
+		) else (
+			del /F /Q "!FileName!.cia"
+			echo %date% - %time:~0,-3% = [i] Converting to CCI succeeded [!FileName!.cci]>>!logfile!
+			set /a finalCount+=1
 		)
 	)
 )
@@ -371,16 +416,16 @@ goto validate
 
 :FilesDecrypted
 cls
-echo.
+echo:
 call :ReduxBanner
-echo.
-echo.
+echo:
+echo:
 echo   Decrypting finished^^!
-echo.
+echo:
 call :ReduxSummary
-echo.
+echo:
 echo   Please review "!logfile!" for more details.
-echo.
+echo:
 echo %date% - %time:~0,-3% = [i] Decrypting process succeeded>>!logfile!
 echo %date% - %time:~0,-3% = [i] Script execution ended>>!logfile!
 endlocal
@@ -389,14 +434,14 @@ exit
 
 :noFilesDecrypted
 cls
-echo.
+echo:
 call :ReduxBanner
-echo.
-echo.
+echo:
+echo:
 echo   No files were decrypted^^!
-echo.
+echo:
 echo   Please review "!logfile!" for more details.
-echo.
+echo:
 echo %date% - %time:~0,-3% = [^^] No files where decrypted>>!logfile!
 echo %date% - %time:~0,-3% = [i] Script execution ended>>!logfile!
 pause >nul | echo Press any key to exit . . .
@@ -404,14 +449,14 @@ exit
 
 :noFilesFound
 cls
-echo.
+echo:
 call :ReduxBanner
-echo.
-echo.
+echo:
+echo:
 echo   No CIA or 3DS files found^^!
-echo.
+echo:
 echo   Please review "!logfile!" for more details.
-echo.
+echo:
 echo %date% - %time:~0,-3% = [^^] No CIA or 3DS were found>>!logfile!
 echo %date% - %time:~0,-3% = [i] Script execution ended>>!logfile!
 pause >nul | echo Press any key to exit . . .
@@ -419,16 +464,16 @@ exit
 
 :someFilesDecrypted
 cls
-echo.
+echo:
 call :ReduxBanner
-echo.
-echo.
+echo:
+echo:
 echo   Some files were not decrypted^^!
-echo.
+echo:
 call :ReduxSummary
-echo.
+echo:
 echo   Please review "!logfile!" for more details.
-echo.
+echo:
 echo %date% - %time:~0,-3% = [^^] Some files where not decrypted>>!logfile!
 echo %date% - %time:~0,-3% = [i] Script execution ended>>!logfile!
 pause >nul | echo Press any key to exit . . .
@@ -436,14 +481,18 @@ exit
 
 :unsupported
 cls
-echo.
+echo:
 call :ReduxBanner
-echo.
-echo.
-echo   This script only supports 64-bit operating systems^!
-echo.
-echo   Script execution halted^!
-echo.
+echo:
+echo:
+echo   The current operating system is incompatible.
+echo   Please run the script on the following systems:
+echo:
+echo   - Windows 7 SP1 [x64] or higher
+echo   - Windows Server 2008 R2 SP1 [x64] or higher
+echo:
+echo   Script execution halted^^!
+echo:
 echo %date% - %time:~0,-3% = [^!] 32-bit operating systems are not supported>>!logfile!
 echo %date% - %time:~0,-3% = [i] Script execution ended>>!logfile!
 pause >nul | echo Press any key to exit . . .
@@ -464,12 +513,27 @@ echo "!TitleId!" | findstr /i "00040138" >nul 2>&1
 if "%errorlevel%"=="0" echo %date% - %time:~0,-3% = [i] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is a system firmware>>%logfile%
 exit /b
 
+:checkForCCIFile
+if "!convertToCCI!"=="0" (
+	echo %date% - %time:~0,-3% = [^^^^] CIA file "!FileName!.cia" was already decrypted>>!logfile!
+	set /a finalCount+=1
+) else (
+	if not exist "!FileName!*-decrypted.cci" (
+		call :convertToCCIFunction
+	) else (
+		echo %date% - %time:~0,-3% = [^^^^] CIA file "!FileName!.cia" was already converted into CCI>>!logfile!
+		set /a finalCount+=1
+	)
+)
+exit /b
+
 :ReduxBanner
 echo   ############################################################
 echo   ###                                                      ###
 echo   ###         Batch CIA 3DS Decryptor Redux %ScriptVersion%         ###
 echo   ###                                                      ###
 echo   ############################################################
+REM echo   !count3DS! !countCIA! - !DSErrCount! !CCIErrCount! !CIAErrCount! - !totalCount! !finalCount!
 exit /b
 
 :ReduxSummary
@@ -500,10 +564,10 @@ exit /b
 
 :golf
 cls
-echo.
+echo:
 call :ReduxBanner
-echo.
-echo.
+echo:
+echo:
 echo            ######      ######    ##          ##########
 echo          ##########  ##########  ##          ##########
 echo          ##      ##  ##      ##  ##          ##
@@ -512,19 +576,49 @@ echo          ##    ####  ##      ##  ##          ########
 echo          ##      ##  ##      ##  ##          ##
 echo          ##########  ##########  ##########  ##
 echo            ########    ######    ##########  ##
-echo.
-echo.
+echo:
+echo:
 echo        On my business card, I am a corporate president.
 echo        In my mind, I am a computer programmer. But in my
 echo        heart, I am a gamer. - Satoru Iwata [1959 - 2015]
-echo.
+echo:
 timeout /t 6 >nul
 set golfEvent=1
 cls
-echo.
+echo:
 call :ReduxBanner
-echo.
-echo.
+echo:
+echo:
 echo   Decrypting...
-echo.
+set FancyArt=0
+call :ReduxFancyArt
+exit /b
+
+:ReduxFancyArt
+echo:
+echo:
+echo:
+echo                  #############   #############
+echo                  #         ###   #         ###
+if !countCIA! GEQ 1 if !count3DS! GEQ 1 (
+	echo                  # CIA/3DS #     # CIA/CCI #
+	set FancyArt=1
+)
+if "!convertToCCI!"=="1" (
+	if not "!FancyArt!"=="1" if !countCIA! GEQ 1 (
+		echo                  #   CIA   #     #   CCI   #
+		set FancyArt=1
+	)
+) else (
+	if not "!FancyArt!"=="1" if !countCIA! GEQ 1 (
+		echo                  #   CIA   #     #   CIA   #
+		set FancyArt=1
+	)
+)
+if not "!FancyArt!"=="1" if !count3DS! GEQ 1 (
+	echo                  #   3DS   #     #   CCI   #
+)
+echo                  #        --------^>        #
+echo                  #         #     #         #
+echo                  ###########     ###########
 exit /b
