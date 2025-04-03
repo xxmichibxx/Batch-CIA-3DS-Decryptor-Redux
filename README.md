@@ -34,6 +34,7 @@ Original thread: https://gbatemp.net/threads/batch-cia-3ds-decryptor-a-simple-ba
 * Visual C++ Redistributable for Visual Studio 2015
 
 ## Notes
+* It's strongly recommended to move all processed files to your desired destination. Further decryption processes may interfere with already processed files. For example, the CCI conversion function deletes all decrypted CIAs after conversion, regardless of success.
 * Already decrypted CIA files won't be converted to CCI. This tool is still a decrypter, not a converter.
 * TWL CIAs (DSi) can be decrypted, but should only be installed on retail consoles. Current 3DS emulators don't support TWL CIAs. Use a DSi emulator like melonDS for playing TWL titles.
 * Files with an exclamation mark cannot be decrypted. The decryptor will report them as invalid because it is unable to find them.
