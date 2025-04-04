@@ -3,7 +3,7 @@ color 1F
 mode 64, 26
 cd /d "%~dp0"
 setlocal EnableDelayedExpansion
-set ScriptVersion=v1.0.6
+set ScriptVersion=v1.0.6.1
 set totalCount=0
 set finalCount=0
 set count3DS=0
@@ -15,9 +15,11 @@ set convertToCCI=0
 set golfEvent=0
 set NCCHDeleted=0
 set FancyArt=0
+set VersionExtended=0
 set rootdir=%cd%
 set content=bin^\CTR_Content.txt
 set logfile=log^\programlog.txt
+if not "%ScriptVersion:~6%"=="" set VersionExtended=1
 if not exist "log" mkdir log
 title Batch CIA 3DS Decryptor Redux !ScriptVersion!
 echo Batch CIA 3DS Decryptor Redux>!logfile!
@@ -391,7 +393,7 @@ if "!errorlevel!"=="0" (
 	echo %date% - %time:~0,-3% = [^^!] Converting to CCI for this title ist not supported [!TitleId! v!TitleVersion!]>>!logfile!
 	set /a CCIErrCount+=1
 ) else (
-	for %%a in (!FileName!*-decrypted.cia) do (
+	for %%a in ("!FileName!*-decrypted.cia") do (
 		set FileName=%%~na
 		bin\makerom.exe -ciatocci "!FileName!.cia" -o "!FileName!.cci" >nul 2>&1
 		if not exist "!FileName!.cci" (
@@ -530,7 +532,11 @@ exit /b
 :ReduxBanner
 echo   ############################################################
 echo   ###                                                      ###
-echo   ###         Batch CIA 3DS Decryptor Redux %ScriptVersion%         ###
+if "!VersionExtended!"=="0" (
+	echo   ###         Batch CIA 3DS Decryptor Redux %ScriptVersion%         ###
+) else (
+	echo   ###        Batch CIA 3DS Decryptor Redux %ScriptVersion%        ###
+)
 echo   ###                                                      ###
 echo   ############################################################
 REM echo   !count3DS! !countCIA! - !DSErrCount! !CCIErrCount! !CIAErrCount! - !totalCount! !finalCount!
