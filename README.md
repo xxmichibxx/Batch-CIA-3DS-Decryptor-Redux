@@ -7,7 +7,7 @@ Batch CIA 3DS Decryptor Redux is a rewritten version of the Batch CIA 3DS Decryp
 
 Original thread: https://gbatemp.net/threads/batch-cia-3ds-decryptor-a-simple-batch-file-to-decrypt-cia-3ds.512385/
 
-![GitHub Release](https://img.shields.io/github/v/release/xxmichibxx/Batch-CIA-3DS-Decryptor-Redux) ![Issues](https://img.shields.io/github/issues/xxmichibxx/Batch-CIA-3DS-Decryptor-Redux) ![GitHub Repo stars](https://img.shields.io/github/stars/xxmichibxx/Batch-CIA-3DS-Decryptor-Redux) 
+![GitHub Release](https://img.shields.io/github/v/release/xxmichibxx/Batch-CIA-3DS-Decryptor-Redux?style=flat) ![GitHub Repo stars](https://img.shields.io/github/stars/xxmichibxx/Batch-CIA-3DS-Decryptor-Redux?style=flat) ![Issues](https://img.shields.io/github/issues/xxmichibxx/Batch-CIA-3DS-Decryptor-Redux?style=flat) 
 
 ## Redux features
 * Improved error handling: Invalid and already decrypted CIAs will be detected.
