@@ -1,0 +1,10 @@
+*.log
+*.txt
+*.cia
+*.3ds
+*.cci
+*.cxi
+*.csv
+
+log/
+_cxi_out/
