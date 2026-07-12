@@ -7,6 +7,9 @@ Batch CIA 3DS Decryptor Redux is a rewritten version of the Batch CIA 3DS Decryp
 
 Original thread: https://gbatemp.net/threads/batch-cia-3ds-decryptor-a-simple-batch-file-to-decrypt-cia-3ds.512385/
 
+> [!IMPORTANT]  
+> I'm currently rewriting the script for version 1.0.7. Because of this, larger pull requests or issues will be addressed at a later time.
+
 ![GitHub Release](https://img.shields.io/github/v/release/xxmichibxx/Batch-CIA-3DS-Decryptor-Redux?style=flat) ![GitHub Repo stars](https://img.shields.io/github/stars/xxmichibxx/Batch-CIA-3DS-Decryptor-Redux?style=flat) ![Issues](https://img.shields.io/github/issues/xxmichibxx/Batch-CIA-3DS-Decryptor-Redux?style=flat) 
 
 ## Redux features
@@ -14,7 +17,7 @@ Original thread: https://gbatemp.net/threads/batch-cia-3ds-decryptor-a-simple-ba
 * Improved script logging: Logging title, title version. Check programlog.txt for more details in the log folder.
 * Proper CIA versioning: Decrypted files will use the same version as the source file. No more version 0 for update CIAs.
 * Fixed decryption for CIA Demo, System and TWL titles
-* Fixed invalid NCCH decryption with crypto seed titles
+* Fixed invalid NCCH decryption with crypto seed titles (thanks to @davidmorom)
 * Updated CTRTool to v1.2.1 (x64)
 * Updated makerom.exe to v0.18.4 (x64)
 * Including seeddb.bin for games using seed crypto introduced in 9.6.0-24
@@ -37,8 +40,8 @@ Original thread: https://gbatemp.net/threads/batch-cia-3ds-decryptor-a-simple-ba
 ## Notes
 * It's strongly recommended to move all processed files to your desired destination. Further decryption processes may interfere with already processed files. For example, the CCI conversion function deletes all decrypted CIAs after conversion, regardless of success.
 * Already decrypted CIA files won't be converted to CCI. This tool is still a decrypter, not a converter.
-* TWL CIAs (DSi) can be decrypted, but should only be installed on retail consoles. Current 3DS emulators don't support TWL CIAs. Use a DSi emulator like melonDS for playing TWL titles.
-* Files with an exclamation mark cannot be decrypted. The decryptor will report them as invalid because it is unable to find them.
+* TWL CIAs (DSi) can be decrypted, but should only be installed on retail consoles. Current 3DS emulators don't support TWL CIAs. Use a DSi emulator like melonDS for playing TWL titles. Decrypting TWL titles will remove the manual because makeROM offers no parameter for adding manuals.
+* Please avoid filenames with like Japanese, Cyrillic, or Arabic characters (non-ASCII characters). Batch scripts don't handle them very well.
 
 ## Credits
 * `Batch CIA 3DS Decryptor` - [matiffeder](https://github.com/matiffeder/3DS-stuff)
