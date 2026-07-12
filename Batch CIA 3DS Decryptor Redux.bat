@@ -37,12 +37,14 @@ for %%a in (bin\*.ncch) do (
 	del "%%a" >nul 2>&1
 	set NCCHDeleted=1
 )
-set "validchars=-_abcdefghijklmnopqrstuvwxyz1234567890. "
-for %%b in (*) do (
-	set "newname="
-	set "oldname=%%b"
-	call :validate
-	if /i "%%b" neq "!newname!" ren "%%~sb" "!newname!" 2>nul
+for %%i in (*.cia,*.3ds) do (
+	setlocal DisableDelayedExpansion
+	for /f "delims=" %%a in ('powershell "$string='%%~ni';$String -replace '[^a-z0-9 _&.-]', ''"') do (
+		if not "%%~i"=="%%a%%~xi" (
+			ren "%%~i"=="%%a%%~xi"
+		)
+	)
+	endlocal
 )
 for %%f in (*.cia) do (
 	echo %%f | find "-decrypted" >nul
@@ -180,8 +182,8 @@ for %%a in (*.cia) do (
 if exist "!content!" del /s "!content!" >nul 2>&1
 if "!finalCount!"=="0" goto noFilesDecrypted
 if !DSErrCount! GEQ 1 goto someFilesDecrypted
+if !CCIErrCount! GEQ 1 goto someFilesDecrypted
 if !CIAErrCount! GEQ 1 goto someFilesDecrypted
-if !CCIErrCount! GEQ 1 goto someFilesNotConverted
 if not "!finalCount!"=="!totalCount!" goto someFilesDecrypted
 goto FilesDecrypted
 
@@ -257,7 +259,7 @@ if /i x!FileName!==x!FileName:decrypted=! (
 		if not errorlevel 1 (
 			echo %date% - %time:~0,-3% = [i] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is a demo title>>!logfile!
 			set CIAType=1
-			echo | bin\decrypt.exe "%%a" >nul 2>&1
+			echo | bin\decrypt.exe "!FileName!.cia" >nul 2>&1
 			call :subroutineRename
 			for %%f in ("bin\tmp.*.ncch") do (
 				set ARG=!ARG! -i "%%f:!i!:!i!"
@@ -312,7 +314,7 @@ if /i x!FileName!==x!FileName:decrypted=! (
 					echo "!TitleId!" | findstr /i "00048004" >nul 2>&1
 					if "!errorlevel!"=="0" echo %date% - %time:~0,-3% = [i] CIA file "!FileName!.cia" [!TitleId! v!TitleVersion!] is a TWL title [3DS DSiWare Ports]>>%logfile%
 					bin\ctrtool.exe --contents=bin\00000000.app --meta=bin\00000000.app "!FileName!.cia" >nul 2>&1
-					ren "bin\00000000.app.0000.00000000" "00000000.app" >nul 2>&1
+					ren "bin\00000000.app.0000.*" "00000000.app" >nul 2>&1
 					call :makeromTWL
 				)
 			) else (
@@ -364,6 +366,8 @@ if "%1"=="DLC" (
 ) else (
 	bin\makerom.exe -f cia -ignoresign -target p -o "!rootdir!\!FileName! %1-decrypted.cia"!ARG! -ver !TitleVersion! >nul 2>&1
 )
+if exist "bin\*.app.*.*" del /F /Q "bin\*.app.*.*"
+if exist "bin\*.app" del /F /Q "bin\*.app"
 if not exist "!FileName! %1-decrypted.cia" (
 	echo %date% - %time:~0,-3% = [^^!] Decrypting failed [!TitleId! v!TitleVersion!]>>!logfile!
 	set /a CIAErrCount+=1
@@ -376,7 +380,8 @@ exit /b
 :makeromTWL
 echo %date% - %time:~0,-3% = [i] Calling makerom for TWL CIA [!TitleId! v!TitleVersion!]>>!logfile!
 bin\makerom.exe -srl "bin\00000000.app" -f cia -ignoresign -target p -o "!rootdir!\!FileName! TWL-decrypted.cia" -ver !TitleVersion! >nul 2>&1
-if exist "bin\00000000.app" del /F /Q "bin\00000000.app"
+if exist "bin\*.app.*.*" del /F /Q "bin\*.app.*.*"
+if exist "bin\*.app" del /F /Q "bin\*.app"
 if not exist "!FileName! TWL-decrypted.cia" (
 	echo %date% - %time:~0,-3% = [^^!] Decrypting failed [!TitleId! v!TitleVersion!]>>!logfile!
 	set /a CIAErrCount+=1
@@ -389,17 +394,17 @@ exit /b
 :convertToCCIFunction
 echo "!TitleId!" | findstr /i /pr "000400db 0004001b 0004009b 00040010 00040030 00040130 0004000e 0004008c 00048005 0004800f 00048004 00040002" >nul 2>&1
 if "!errorlevel!"=="0" (
-	echo %date% - %time:~0,-3% = [^^] Converting to CCI for this title is not supported [!TitleId! v!TitleVersion!]. Keeping decrypted CIA.>>!logfile!
+	if exist "!FileName!*-decrypted.cia" del /F /Q "!FileName!*-decrypted.cia"
+	echo %date% - %time:~0,-3% = [^^!] Converting to CCI for this title ist not supported [!TitleId! v!TitleVersion!]>>!logfile!
 	set /a CCIErrCount+=1
-	set /a finalCount+=1
 ) else (
 	for %%a in ("!FileName!*-decrypted.cia") do (
 		set FileName=%%~na
 		bin\makerom.exe -ciatocci "!FileName!.cia" -o "!FileName!.cci" >nul 2>&1
 		if not exist "!FileName!.cci" (
-			echo %date% - %time:~0,-3% = [^^!] Converting to CCI failed [!FileName!.cia]. Keeping decrypted CIA.>>!logfile!
+			echo %date% - %time:~0,-3% = [^^!] Converting to CCI failed [!FileName!.cia]>>!logfile!
+			if exist "!FileName!*-decrypted.cia" del /F /Q "!FileName!*-decrypted.cia"
 			set /a CCIErrCount+=1
-			set /a finalCount+=1
 		) else (
 			del /F /Q "!FileName!.cia"
 			echo %date% - %time:~0,-3% = [i] Converting to CCI succeeded [!FileName!.cci]>>!logfile!
@@ -481,23 +486,6 @@ echo %date% - %time:~0,-3% = [i] Script execution ended>>!logfile!
 pause >nul | echo Press any key to exit . . .
 exit
 
-:someFilesNotConverted
-cls
-echo:
-call :ReduxBanner
-echo:
-echo:
-echo   Decryption finished with conversion warnings^^!
-echo:
-call :ReduxSummary
-echo:
-echo   Please review "!logfile!" for more details.
-echo:
-echo %date% - %time:~0,-3% = [^^] All files decrypted, but some not converted to CCI>>!logfile!
-echo %date% - %time:~0,-3% = [i] Script execution ended>>!logfile!
-pause >nul | echo Press any key to exit . . .
-exit
-
 :unsupported
 cls
 echo:
@@ -569,16 +557,10 @@ if !count3DS! GEQ 1 (
 	)
 )
 if "!convertToCCI!"=="1" (
-	set /a decryptedOK=!countCIA!-!CIAErrCount!
-	set /a convertedOK=!decryptedOK!-!CCIErrCount!
-	if !convertedOK! GEQ 1 (
-		echo   - !convertedOK! from !countCIA! CIA file[s] decrypted and converted to CCI
-	)
 	if !CCIErrCount! GEQ 1 (
-		echo   - !CCIErrCount! from !countCIA! CIA file[s] decrypted but NOT converted to CCI ^(Unsupported/Failed^)
-	)
-	if !CIAErrCount! GEQ 1 (
-		echo   - !CIAErrCount! from !countCIA! CIA file[s] failed to decrypt
+		echo   - !CCIErrCount! from !countCIA! CIA file[s] were not decrypted into CCI
+	) else (
+		echo   - !countCIA! from !countCIA! CIA file[s] decrypted into CCI
 	)
 ) else (
 	if !countCIA! GEQ 1 (
