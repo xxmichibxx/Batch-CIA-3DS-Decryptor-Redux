@@ -1,0 +1,18 @@
+# Downloaded Linux tools and seed database
+bin-linux/
+
+# ROM and decrypted output files
+*.3ds
+*.cci
+*.cia
+*.cxi
+*.ncch
+*.app
+
+# Runtime logs and temporary work directories
+log/
+.bc3ds-linux.*/
+
+# Extracted title icons
+*_icon_24x24.png
+*_icon_48x48.png

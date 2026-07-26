@@ -1,0 +1,26 @@
+name: Linux shell checks
+
+on:
+  push:
+    paths:
+      - "Batch_CIA_3DS_Decryptor_Redux_Linux.sh"
+      - ".github/workflows/linux-shell-check.yml"
+  pull_request:
+    paths:
+      - "Batch_CIA_3DS_Decryptor_Redux_Linux.sh"
+      - ".github/workflows/linux-shell-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  bash:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Bash syntax
+        run: bash -n Batch_CIA_3DS_Decryptor_Redux_Linux.sh
+      - name: Check help command
+        run: bash Batch_CIA_3DS_Decryptor_Redux_Linux.sh --help >/dev/null
+      - name: Run ShellCheck
+        run: shellcheck --severity=error Batch_CIA_3DS_Decryptor_Redux_Linux.sh
