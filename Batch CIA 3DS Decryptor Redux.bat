@@ -3,7 +3,7 @@ color 1F
 mode 64, 26
 cd /d "%~dp0"
 setlocal EnableDelayedExpansion
-set ScriptVersion=v1.0.6.2
+set ScriptVersion=v1.0.6.3
 set totalCount=0
 set finalCount=0
 set count3DS=0
@@ -37,11 +37,12 @@ for %%a in (bin\*.ncch) do (
 	del "%%a" >nul 2>&1
 	set NCCHDeleted=1
 )
-for %%i in (*.cia,*.3ds) do (
+for %%i in (*.cia, *.3ds) do (
 	setlocal DisableDelayedExpansion
-	for /f "delims=" %%a in ('powershell "$string='%%~ni';$String -replace '[^a-z0-9 _&.-]', ''"') do (
+	set "FNAME=%%~ni"
+	for /f "delims=" %%a in ('powershell -NoProfile -Command "$env:FNAME -replace '[^a-z0-9 _&.-]', ''"') do (
 		if not "%%~i"=="%%a%%~xi" (
-			ren "%%~i"=="%%a%%~xi"
+			ren "%%~i" "%%a%%~xi"
 		)
 	)
 	endlocal
